@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('panoramas', function (Blueprint $table) {
             $table->id();
+            $table->string('nombre');
+            $table->string('image_path');
+            $table->foreignId('created_by')
+                    ->constrained('users')
+                    ->onDelete('cascade');
             $table->timestamps();
         });
     }

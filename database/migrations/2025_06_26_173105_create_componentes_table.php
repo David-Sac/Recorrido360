@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('componentes', function (Blueprint $table) {
             $table->id();
+            $table->string('titulo');
+            $table->text('descripcion')->nullable();
+            $table->string('imagen_path')->nullable();
+            $table->foreignId('created_by')
+                    ->constrained('users')
+                    ->onDelete('cascade');
             $table->timestamps();
         });
     }

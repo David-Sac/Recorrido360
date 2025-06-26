@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('elementos', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('componentes_id')
+                    ->constrained()
+                    ->onDelete('cascade');
+            $table->string('nombre');
+            $table->enum('tipo',['datos', 'video', 'imagen', 'audio', 'otro']);
+            $table->text('contenido')->nullable();
             $table->timestamps();
         });
     }

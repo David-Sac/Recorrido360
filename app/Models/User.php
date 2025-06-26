@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use PhpParser\Node\Expr\FuncCall;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -18,9 +20,12 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+            'name',
+            'dni',
+            'phone',
+            'birthdate',
+            'email',
+            'password',
     ];
 
     /**
@@ -42,4 +47,20 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    /**
+     * Un usuario puede crear muchos panoramas
+     */
+    public function panoramas()
+    {
+        return $this->hasMany(Panorama::class, 'created_by');
+    }
+
+    /**
+     * Un usuario puede crear o editar muchos componentes
+     */
+    public function componentes()
+    {
+        return $this->hasMany(Componente::class, 'created_by');
+    }
 }

@@ -13,6 +13,13 @@ return new class extends Migration
     {
         Schema::create('hotspots', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('panorama_id')
+                    ->constrained()
+                    ->onDelete('cascade');
+            $table->foreignId('componente_id')
+                    ->constrained()
+                    ->onDelete('cascade');
+            $table->string('posicion', 50);
             $table->timestamps();
         });
     }
