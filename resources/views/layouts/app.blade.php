@@ -1,9 +1,12 @@
 {{-- layouts/app.blade.php --}}
-<html>
-  <body>
+<body class="font-sans antialiased">
+  <div class="flex flex-col min-h-screen">
     <x-navbar />
-    <main>
+
+    <main class="flex-grow">
       {{ $slot }}
     </main>
-  </body>
-</html>
+
+    <x-footer />
+  </div>
+</body>
