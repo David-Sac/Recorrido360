@@ -3,6 +3,10 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Componente;
+use App\Http\Controllers\ComponenteController;
+use App\Http\Controllers\ElementoController;
+
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -32,3 +36,13 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+Route::middleware(['auth', 'role:Admin|Super Admin'])->group(function(){
+    Route::resource('componentes', ComponenteController::class);
+});
+
+Route::middleware(['auth','role:Admin|Super Admin'])
+     ->group(function () {
+         Route::resource('elementos', ElementoController::class);
+     });
+

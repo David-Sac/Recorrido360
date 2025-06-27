@@ -1,4 +1,5 @@
-<nav x-data="{ open: false }" class="w-full bg-green-800 text-white">
+<nav x-data="{ open: false }"   class="sticky top-0 z-50 bg-green-800 text-white h-16"
+>
   {{-- Contenedor centrado hasta un max-width razonable --}}
   <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center h-16">
@@ -23,11 +24,11 @@
         @guest
           <a href="{{ route('login') }}"
              class="px-4 py-2 bg-white text-indigo-800 rounded hover:bg-gray-100">
-            Login
+            Iniciar Sesión
           </a>
           <a href="{{ route('register') }}"
              class="px-4 py-2 border border-white rounded hover:bg-white hover:text-indigo-800">
-            Register
+            Registrarse
           </a>
         @else
           <div class="relative" x-data="{ openDrop: false }">
@@ -72,7 +73,7 @@
   </div>
 
   {{-- MENÚ MÓVIL --}}
-  <div x-show="open" class="md:hidden bg-green-700">
+  <div x-show="open" class="md:hidden absolute top-full left-0 w-full z-40 bg-green-700">
     <div class="px-2 pt-2 pb-3 space-y-1">
       <a href="{{ url('/') }}" class="block px-3 py-2 hover:bg-indigo-600 rounded">Inicio</a>
       <a href="{{ url('/') }}" class="block px-3 py-2 hover:bg-indigo-600 rounded">Panoramas</a>
