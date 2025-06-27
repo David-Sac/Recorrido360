@@ -13,13 +13,20 @@ return new class extends Migration
     {
         Schema::create('hotspots', function (Blueprint $table) {
             $table->id();
+
+            // FK a panoramas.id
             $table->foreignId('panorama_id')
-                    ->constrained()
-                    ->onDelete('cascade');
-            $table->foreignId('componente_id')
-                    ->constrained()
-                    ->onDelete('cascade');
+                  ->constrained('panoramas')
+                  ->onDelete('cascade');
+
+            // FK a elementos.id (en lugar de componente_id)
+            $table->foreignId('elemento_id')
+                  ->constrained('elementos')
+                  ->onDelete('cascade');
+
+            // Posición dentro de la esfera: "x y z"
             $table->string('posicion', 50);
+
             $table->timestamps();
         });
     }

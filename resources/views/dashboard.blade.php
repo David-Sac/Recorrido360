@@ -31,7 +31,7 @@
         </a>
 
         {{-- Panoramas --}}
-        <a href="#"
+        <a href="{{ route('panoramas.index') }}"
            class="block p-6 bg-white rounded-lg border border-gray-200 shadow hover:bg-gray-50">
           <h3 class="text-lg font-semibold text-gray-900">Panoramas</h3>
           <p class="mt-2 text-gray-600">Sube y administra imágenes 360° de los recorridos.</p>

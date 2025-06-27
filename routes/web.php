@@ -5,7 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Models\Componente;
 use App\Http\Controllers\ComponenteController;
 use App\Http\Controllers\ElementoController;
-
+use App\Http\Controllers\PanoramaController;
+use App\Http\Controllers\HotspotController;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,3 +47,14 @@ Route::middleware(['auth','role:Admin|Super Admin'])
          Route::resource('elementos', ElementoController::class);
      });
 
+Route::middleware(['auth','role:Admin|Super Admin'])->group(function(){
+    // CRUD de panoramas
+    Route::resource('panoramas', PanoramaController::class);
+
+    // Hotspots anidados bajo panoramas
+    Route::resource('panoramas.hotspots', HotspotController::class)
+         ->shallow();
+});
+
+Route::post('panoramas/{panorama}/hotspots', [HotspotController::class,'store'])
+     ->middleware(['auth','role:Admin|Super Admin']);

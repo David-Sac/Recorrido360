@@ -8,17 +8,17 @@ class Hotspot extends Model
 {
     protected $fillable = [
         'panorama_id',
-        'componente_id',
+        'elemento_id',   // ← cambiamos aquí
         'posicion',
     ];
+
+    public function elemento()
+    {
+        return $this->belongsTo(Elemento::class);
+    }
 
     public function panorama()
     {
         return $this->belongsTo(Panorama::class);
-    }
-
-    public function componente()
-    {
-        return $this->belongsTo(Componente::class);
     }
 }

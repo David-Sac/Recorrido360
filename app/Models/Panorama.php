@@ -10,6 +10,7 @@ class Panorama extends Model
         'nombre',
         'imagen_path',
         'created_by',
+        'componente_id',
     ];
 
     public function hotspots()
@@ -20,5 +21,10 @@ class Panorama extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function componente()
+    {
+    return $this->belongsTo(Componente::class);
     }
 }

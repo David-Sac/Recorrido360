@@ -1,4 +1,3 @@
-{{-- resources/views/components/app-layout.blade.php --}}
 <!DOCTYPE html>
 <html lang="{{ str_replace('_','-',app()->getLocale()) }}">
 <head>
@@ -10,25 +9,29 @@
 
   <!-- Fuentes -->
   <link rel="preconnect" href="https://fonts.bunny.net">
-  <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap"
+        rel="stylesheet" />
 
-  <!-- Aquí cargamos Tailwind y tu JS via Vite -->
+  <!-- Tailwind & Vite -->
   @vite(['resources/css/app.css','resources/js/app.js'])
+
+  {{-- Slot head (A-Frame, Alpine, estilos extra…) --}}
+  {!! $head ?? '' !!}
 </head>
 <body class="font-sans antialiased">
   <div class="flex flex-col min-h-screen bg-white w-full">
 
-    {{-- Tu navbar como componente --}}
     <x-navbar />
 
-    {{-- El contenido de cada página va aquí --}}
     <main class="flex-grow">
       {{ $slot }}
     </main>
 
-    {{-- Pie de página --}}
     <x-footer />
 
   </div>
+
+  {{-- Slot scripts (JS extra al final del body) --}}
+  {!! $scripts ?? '' !!}
 </body>
 </html>
