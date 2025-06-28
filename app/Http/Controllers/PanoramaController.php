@@ -16,23 +16,16 @@ class PanoramaController extends Controller
         $panoramas = Panorama::latest()->paginate(10);
         return view('panoramas.index', compact('panoramas'));
     }
-
     public function create()
     {
-        // 1) cargamos componentes con sus elementos
-        $componentes = Componente::with('elementos')
-                        ->get()
-                        ->pluck('titulo','id');
+        // Para el select padre
+        $componentes = Componente::pluck('titulo','id');
+        // Inicialmente vacío — lo irás cargando dinámicamente o mostrando vacío
+        $elementos   = [];
 
-        // 2) construimos un mapa [ componente_id => [ elemento_id => nombre, ... ], ... ]
-        $elementosByComponent = Componente::with('elementos')
-                            ->get()
-                            ->mapWithKeys(fn($c) => [
-                                $c->id => $c->elementos->pluck('nombre','id')
-                            ]);
-
-        return view('panoramas.create', compact('componentes','elementosByComponent'));
+        return view('panoramas.create', compact('componentes','elementos'));
     }
+
 
     public function store(PanoramaRequest $request)
     {

@@ -9,14 +9,13 @@
 
   <!-- Fuentes -->
   <link rel="preconnect" href="https://fonts.bunny.net">
-  <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap"
-        rel="stylesheet" />
+  <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-  <!-- Tailwind & Vite -->
+  <!-- Tailwind y tu JS via Vite -->
   @vite(['resources/css/app.css','resources/js/app.js'])
 
-  {{-- Slot head (A-Frame, Alpine, estilos extra…) --}}
-  {!! $head ?? '' !!}
+  {{-- slot para inyectar scripts en el <head> (A-Frame, Alpine) --}}
+  {{ $head ?? '' }}
 </head>
 <body class="font-sans antialiased">
   <div class="flex flex-col min-h-screen bg-white w-full">
@@ -28,10 +27,9 @@
     </main>
 
     <x-footer />
-
   </div>
 
-  {{-- Slot scripts (JS extra al final del body) --}}
-  {!! $scripts ?? '' !!}
+  {{-- slot para inyectar JS al final del body --}}
+  {{ $scripts ?? '' }}
 </body>
 </html>
