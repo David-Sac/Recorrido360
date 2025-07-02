@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Elemento;
+use Illuminate\Http\Request;
 
 use App\Models\Panorama;
 use App\Models\Componente;              // ← Importa Componente
@@ -31,17 +32,22 @@ class PanoramaController extends Controller
     {
         $data = $request->validated();
         $data['componente_id'] = $request->componente_id;
+        $data['created_by']    = auth()->id();
 
-        if ($path = $request->file('imagen_path')->store('panoramas','public')) {
+        // Guarda la imagen en storage/app/public/panoramas
+        if ($file = $request->file('imagen_path')) {
+            $path = $file->store('panoramas', 'public');
             $data['imagen_path'] = $path;
         }
-        $data['created_by'] = auth()->id();
 
-        Panorama::create($data);
+        $panorama = Panorama::create($data);
 
-        return redirect()->route('panoramas.index')
-                         ->with('success','Panorama creado correctamente');
+        return redirect()
+            ->route('panoramas.index')
+            ->with('success', 'Panorama creado correctamente');
     }
+
+
 
     public function edit(Panorama $panorama)
     {
@@ -74,4 +80,23 @@ class PanoramaController extends Controller
         return redirect()->route('panoramas.index')
                          ->with('error','Panorama eliminado');
     }
+
+    // app/Http/Controllers/PanoramaController.php
+
+    public function previewUpload(Request $request)
+    {
+        // Validamos sólo la imagen
+        $request->validate([
+        'imagen' => 'required|image|mimes:jpg,jpeg,png|max:10240'
+        ]);
+
+        // Guardamos en public/temp
+        $path = $request->file('imagen')->store('temp','public');
+
+        // Devolvemos la URL completa
+        return response()->json([
+        'url' => asset('storage/'.$path)
+        ]);
+    }
+
 }
