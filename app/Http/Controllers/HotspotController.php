@@ -26,4 +26,12 @@ class HotspotController extends Controller
         $hotspot->delete();
         return back()->with('error','Hotspot eliminado');
     }
+
+    public function index(Panorama $panorama)
+    {
+        // Carga la relación con su elemento (si la tienes) y hotspots
+        $panorama->load('hotspots.elemento');
+        return view('hotspots.index', compact('panorama'));
+    }
+
 }

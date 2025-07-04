@@ -28,6 +28,11 @@
             <div class="mt-4 flex justify-between">
               <a href="{{ route('panoramas.edit', $p) }}"
                  class="text-blue-600 hover:underline">Editar</a>
+              {{-- NUEVO: Gestionar Hotspots --}}
+              <a href="{{ route('panoramas.hotspots.index', $p) }}"
+                class="text-green-600 hover:underline">
+                ⚑ Gestionar Hotspots
+              </a>
               <form action="{{ route('panoramas.destroy', $p) }}" method="POST"
                     onsubmit="return confirm('Eliminar panorama?')" class="inline">
                 @csrf @method('DELETE')
