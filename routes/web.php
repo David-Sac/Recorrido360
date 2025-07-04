@@ -53,7 +53,8 @@ Route::middleware(['auth','role:Admin|Super Admin'])->group(function(){
 
     // Hotspots anidados bajo panoramas
     Route::resource('panoramas.hotspots', HotspotController::class)
-         ->shallow();
+         ->shallow()
+         ->only(['index','store','destroy']);
 });
 
 Route::post('panoramas/{panorama}/hotspots', [HotspotController::class,'store'])

@@ -8,30 +8,46 @@ use Illuminate\Http\Request;
 
 class HotspotController extends Controller
 {
+    // Crear un hotspot en el panorama dado
     public function store(Request $request, Panorama $panorama)
     {
+        // 1) Validación de entrada
         $data = $request->validate([
-            'elemento_id' => 'required|exists:elementos,id',  // ← validamos elemento_id
             'posicion'    => 'required|string',
+            'elemento_id' => 'nullable|exists:elementos,id',
         ]);
 
+        // 2) Asociar al panorama
         $data['panorama_id'] = $panorama->id;
-        Hotspot::create($data);
 
-        return response()->json(['success' => true]);
+        // 3) Crear el registro
+        $hotspot = Hotspot::create($data);
+
+        // 4) Responder JSON con datos útiles para el frontend
+        return response()->json([
+            'success'          => true,
+            'id'               => $hotspot->id,
+            'position'         => $hotspot->posicion,
+            // devolver también el nombre del elemento para la tabla
+            'elemento_nombre'  => optional($hotspot->elemento)->nombre,
+        ]);
     }
 
+    // Eliminar un hotspot
     public function destroy(Hotspot $hotspot)
     {
         $hotspot->delete();
-        return back()->with('error','Hotspot eliminado');
-    }
 
+        // Respuesta sencilla para confirmar al frontend
+        return response()->json(['success' => true]);
+    }
+    // Mostrar listado de hotspots de un panorama
     public function index(Panorama $panorama)
     {
-        // Carga la relación con su elemento (si la tienes) y hotspots
-        $panorama->load('hotspots.elemento');
-        return view('hotspots.index', compact('panorama'));
-    }
+        // Cargamos los hotspots junto con su elemento
+        $hotspots = $panorama->hotspots()->with('elemento')->get();
 
+        // Devolvemos una vista específica
+        return view('hotspots.index', compact('panorama','hotspots'));
+    }
 }
