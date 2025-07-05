@@ -44,10 +44,9 @@ class HotspotController extends Controller
     // Mostrar listado de hotspots de un panorama
     public function index(Panorama $panorama)
     {
-        // Cargamos los hotspots junto con su elemento
-        $hotspots = $panorama->hotspots()->with('elemento')->get();
-
-        // Devolvemos una vista específica
-        return view('hotspots.index', compact('panorama','hotspots'));
+        $hotspots  = $panorama->hotspots()->with('elemento')->get();
+        $elementos = $panorama->componente->elementos()->select('id','nombre')->get();
+        return view('hotspots.index', compact('panorama','hotspots','elementos'));
     }
+
 }
