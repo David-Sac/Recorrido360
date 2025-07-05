@@ -62,8 +62,8 @@
 
         <a-sky src="#pano" rotation="0 -100 0"></a-sky>
 
-        <a-camera wasd-controls-enabled="false" look-controls="true">
-          <a-cursor rayOrigin="mouse" material="color:white;shader:flat"></a-cursor>
+        <a-camera id="camera" wasd-controls-enabled="false" look-controls="true">
+          <a-cursor rayOrigin="mouse" material="color:white;shader:flat" raycaster= "objects: a-sky"></a-cursor>
         </a-camera>
 
         <template x-for="h in hotspots" :key="h.id">
@@ -170,17 +170,15 @@
           hover: null,
 
           init() {
-            const sceneEl = this.$refs.scene;
-            sceneEl.addEventListener('loaded', () => {
-              sceneEl.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
-            });
-            sceneEl.addEventListener('click', e => {
-              if (!this.adding) return;
-              const inter = e.detail.intersection;
-              if (!inter) return;
-              const p = inter.point;
-              this.newPos = [p.x, p.y, p.z].map(n => n.toFixed(2)).join(' ');
-            });
+          sceneEl.addEventListener('click', e => {
+            if (!this.adding) return
+            const inter = e.detail.intersection
+            if (!inter) return
+            const sky = sceneEl.querySelector('a-sky')
+            const radius = sky.getAttribute('radius') || 500     // radio del cielo
+            const p = inter.point.clone().normalize().multiplyScalar(radius - 5) // dentro del cielo
+            this.newPos = `${p.x.toFixed(2)} ${p.y.toFixed(2)} ${p.z.toFixed(2)}`
+          });
           },
 
           onMouseMove(evt) {
