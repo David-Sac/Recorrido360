@@ -1,3 +1,4 @@
+{{-- resources/views/hotspots/index.blade.php --}}
 <x-app-layout>
 
   <x-slot name="head">
@@ -23,9 +24,9 @@
       ->values()
       ->toJson();
 
-    $elementosJson = \App\Models\Elemento::where('componente_id', $panorama->componente_id)
+    $elementosJson = \App\Models\Elemento::where('componente_id',$panorama->componente_id)
       ->get()
-      ->map(fn($e) => ['id'=>$e->id,'nombre'=>$e->nombre])
+      ->map(fn($e)=>['id'=>$e->id,'nombre'=>$e->nombre])
       ->toJson();
   @endphp
 
@@ -46,55 +47,70 @@
       <h1 class="text-2xl font-bold">Visor 360°</h1>
       <div>
         <button @click="startAdd()"
-                class="px-3 py-1 bg-green-600 text-white rounded mr-2">
-          ＋ Añadir
-        </button>
+                class="px-3 py-1 bg-green-600 text-white rounded mr-2">＋ Añadir</button>
         <button @click="cancelAdd()"
-                class="px-3 py-1 bg-gray-400 text-white rounded">
-          ✕ Cancelar
-        </button>
+                class="px-3 py-1 bg-gray-400 text-white rounded">✕ Cancelar</button>
       </div>
     </div>
 
     <div class="scene-container rounded-lg overflow-hidden bg-black">
-      <a-scene x-ref="scene" embedded style="width:100%;height:100%;">
-        <a-sky src="{{ asset('storage/'.$panorama->imagen_path) }}" rotation="0 -100 0"></a-sky>
+      <a-scene x-ref="scene" embedded>
+
+        <a-assets>
+          <img id="pano" src="{{ asset('storage/'.$panorama->imagen_path) }}" />
+        </a-assets>
+
+        <a-sky src="#pano" rotation="0 -100 0"></a-sky>
+
         <a-camera wasd-controls-enabled="false" look-controls="true">
           <a-cursor rayOrigin="mouse" material="color:white;shader:flat"></a-cursor>
         </a-camera>
 
         <template x-for="h in hotspots" :key="h.id">
-          <a-entity
-            :position="h.posicion"
-            geometry="primitive: sphere; radius: 0.15"
-            material="color:red;opacity:0.8"
-            look-at="#camera"
-          ></a-entity>
-        </template>
-
-        <template x-for="h in hotspots" :key="h.id">
-          <a-image
-            :position="h.posicion"
-            src="{{ asset('images/hotspot-icon.png') }}"
-            look-at="#camera"
-            scale="0.5 0.5 0.5"
-            @click.stop="deleteHotspot(h.id)"
-          ></a-image>
+          <a-entity :position="h.posicion.split(' ').map(n => parseFloat(n))">
+            <a-sphere radius="0.15"
+                      color="red"
+                      opacity="0.8"
+                      look-at="#camera"
+                      @click.stop="deleteHotspot(h.id)">
+            </a-sphere>
+            <a-text :value="h.posicion"
+                    align="center"
+                    color="white"
+                    position="0 0.25 0"
+                    look-at="#camera">
+            </a-text>
+          </a-entity>
         </template>
 
         <template x-if="adding && newPos">
-          <a-entity
-            :position="newPos"
-            geometry="primitive: sphere; radius: 0.15"
-            material="color:lime;opacity:0.8"
-            look-at="#camera"
-          ></a-entity>
+          <a-entity :position="newPos.split(' ').map(n => parseFloat(n))">
+            <a-sphere radius="0.15"
+                      color="lime"
+                      opacity="0.8"
+                      look-at="#camera">
+            </a-sphere>
+            <a-text :value="newPos"
+                    align="center"
+                    color="lime"
+                    position="0 0.25 0"
+                    look-at="#camera">
+            </a-text>
+            <a-image src="{{ asset('images/hotspot-icon-add.png') }}"
+                     scale="0.5 0.5 0.5"
+                     @click.stop="confirmAdd()"
+                     look-at="#camera">
+            </a-image>
+          </a-entity>
         </template>
+
       </a-scene>
     </div>
 
     <div x-show="adding && newPos" class="mt-4 p-4 bg-gray-50 rounded shadow">
-      <div class="mb-2 text-sm">Nueva posición: <strong x-text="newPos"></strong></div>
+      <div class="mb-2 text-sm">
+        Nueva posición: <strong x-text="newPos"></strong>
+      </div>
       <label class="block mb-2 text-sm font-medium">Selecciona elemento:</label>
       <select x-model="selectedElemento" class="w-full border rounded p-2 mb-3">
         <option value="">— Elige elemento —</option>
@@ -158,8 +174,6 @@
             sceneEl.addEventListener('loaded', () => {
               sceneEl.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
             });
-
-            // ——— Aquí recuperamos el clic para fijar newPos ———
             sceneEl.addEventListener('click', e => {
               if (!this.adding) return;
               const inter = e.detail.intersection;
@@ -171,11 +185,11 @@
 
           onMouseMove(evt) {
             const sceneEl = this.$refs.scene;
-            const rect = sceneEl.canvas.getBoundingClientRect();
-            const x_ndc = ((evt.clientX - rect.left) / rect.width) * 2 - 1;
-            const y_ndc = -((evt.clientY - rect.top) / rect.height) * 2 + 1;
-            const mouse = new AFRAME.THREE.Vector2(x_ndc, y_ndc);
-            const camera = sceneEl.camera.el.getObject3D('camera');
+            const rect    = sceneEl.canvas.getBoundingClientRect();
+            const x_ndc   = ((evt.clientX - rect.left) / rect.width) * 2 - 1;
+            const y_ndc   = -((evt.clientY - rect.top) / rect.height) * 2 + 1;
+            const mouse   = new AFRAME.THREE.Vector2(x_ndc, y_ndc);
+            const camera  = sceneEl.camera.el.getObject3D('camera');
             const raycaster = new AFRAME.THREE.Raycaster();
             raycaster.setFromCamera(mouse, camera);
             const skyObj = sceneEl.querySelector('a-sky').object3D;
@@ -209,11 +223,7 @@
                 posicion: this.newPos
               })
             })
-            .then(res => {
-              if (!res.ok) throw new Error('Error creando hotspot');
-              return res.json();
-            })
-            .then(() => location.reload());
+            .then(res => res.ok ? location.reload() : Promise.reject());
           },
 
           deleteHotspot(id) {
@@ -222,10 +232,7 @@
               method:'DELETE',
               headers:{ 'X-CSRF-TOKEN':'{{ csrf_token() }}' }
             })
-            .then(res => {
-              if (!res.ok) throw new Error('Error eliminando hotspot');
-              location.reload();
-            });
+            .then(res => res.ok ? location.reload() : Promise.reject());
           }
         }
       }
