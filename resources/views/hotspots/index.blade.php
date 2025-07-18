@@ -94,30 +94,34 @@
 
         <!-- Hotspots existentes -->
         <template x-for="h in hotspots" :key="h.id">
-          <a-sphere
+          <a-circle
             class="clickable"
             :position="h.posArr.join(' ')"
             radius="5"
-            color="red"
+            color="#454545"+
+            transparent="true"
+            opacity="0.8"
             look-at="#camera"
             event-set__enter="_event: mouseenter; scale: 1.3 1.3 1.3"
             event-set__leave="_event: mouseleave; scale: 1 1 1"
             toggle-color="color1: red; color2: green">
-          </a-sphere>
+          </a-circle>
         </template>
 
         <!-- Esfera verde dinámica al añadir -->
         <template x-if="adding && newPosArr">
-          <a-sphere
+          <a-circle
             :position="newPosArr.join(' ')"
             radius="5"
-            color="lime"
+            color="#454545"+
+            transparent="true"
+            opacity="0.8"
             look-at="#camera"
             event-set__enter="_event: mouseenter; scale: 1.3 1.3 1.3"
             event-set__leave="_event: mouseleave; scale: 1 1 1"
             toggle-color="color1: lime; color2: yellow"
             @click.stop="confirmAdd()">
-          </a-sphere>
+          </a-circle>
         </template>
 
       </a-scene>
@@ -204,20 +208,24 @@
           onClick(evt) {
             if (!this.adding) return;
             console.log('[hotspot] click event, adding=', this.adding);
-
+            
+            // Convertir posición de ratón a coordenadas
             const rect = this.$refs.scene.canvas.getBoundingClientRect();
             const x_ndc = ((evt.clientX - rect.left) / rect.width) * 2 - 1;
             const y_ndc = -((evt.clientY - rect.top) / rect.height) * 2 + 1;
             const mouse = new AFRAME.THREE.Vector2(x_ndc, y_ndc);
 
+            // Crea rayo para llegar al sky
             const camera = this.$refs.scene.camera.el.getObject3D('camera');
             const raycaster = new AFRAME.THREE.Raycaster();
             raycaster.setFromCamera(mouse, camera);
 
+            // intersecta con el domo 360
             const skyObj = this.$refs.scene.querySelector('#sky').object3D;
             const intersects = raycaster.intersectObject(skyObj, true);
             console.log('[hotspot] intersects:', intersects);
-
+            
+            // Si intersecta toma el punto 3D
             if (intersects.length > 0) {
               const p = intersects[0].point;
               console.log('[hotspot] point:', p);

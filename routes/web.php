@@ -59,3 +59,5 @@ Route::middleware(['auth','role:Admin|Super Admin'])->group(function(){
 
 Route::post('panoramas/{panorama}/hotspots', [HotspotController::class,'store'])
      ->middleware(['auth','role:Admin|Super Admin']);
+
+Route::get('/hotspots/{hotspot}', [HotspotController::class, 'show']);
