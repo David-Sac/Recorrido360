@@ -14,7 +14,7 @@ class HotspotController extends Controller
         // 1) Validación de entrada
         $data = $request->validate([
             'posicion'    => 'required|string',
-            'elemento_id' => 'nullable|exists:elementos,id',
+            'elemento_id' => 'required|exists:elementos,id',
         ]);
 
         // 2) Asociar al panorama

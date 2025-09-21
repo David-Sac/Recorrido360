@@ -18,6 +18,11 @@ class Componente extends Model
         return $this->hasMany(Elemento::class);
     }
 
+    public function panoramas()
+    {
+        return $this->hasMany(Panorama::class);
+    }
+
     public function hotspots()
     {
         return $this->hasMany(Hotspot::class);

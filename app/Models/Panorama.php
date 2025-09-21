@@ -27,4 +27,11 @@ class Panorama extends Model
     {
     return $this->belongsTo(Componente::class);
     }
+
+    public function recorridos()
+    {
+        return $this->belongsToMany(Recorrido::class)
+            ->withPivot('order')
+            ->withTimestamps();
+    }
 }
