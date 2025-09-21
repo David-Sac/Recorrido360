@@ -10,7 +10,6 @@ class UpdateRecorridoRequest extends FormRequest
     public function rules(): array {
         return [
             'titulo' => ['required','string','max:255'],
-            'slug'   => ['nullable','string','max:255', Rule::unique('recorridos','slug')->ignore($this->recorrido?->id)],
             'descripcion' => ['nullable','string'],
             'publicado'   => ['nullable','boolean'],
         ];

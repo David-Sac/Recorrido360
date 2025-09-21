@@ -43,10 +43,9 @@ require __DIR__.'/auth.php';
 // ÁREA ADMIN | SUPER ADMIN
 // ----------------------
 Route::middleware(['auth', 'role:Admin|Super Admin'])->group(function () {
-    Route::resource('componentes', ComponenteController::class);
-    Route::resource('elementos', ElementoController::class);
-    Route::resource('recorridos', RecorridoController::class);
-});
+    Route::resource('componentes', ComponenteController::class)->except(['show']);
+    Route::resource('elementos',  ElementoController::class)->except(['show']);
+    Route::resource('recorridos', RecorridoController::class)->except(['show']);});
 
 // ----------------------
 // ÁREA ADMIN | SUPER ADMIN | ASISTENTE

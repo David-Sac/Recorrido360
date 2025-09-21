@@ -23,10 +23,11 @@ class RecorridoController extends Controller
     {
         $data = $request->validated();
 
-        // Generar slug si viene vacío
-        $data['slug'] = $data['slug'] ?: Str::slug($data['titulo']);
+        // Normaliza checkbox
+        $data['publicado']  = (bool) ($data['publicado'] ?? false);
 
-        $data['publicado'] = (bool) ($data['publicado'] ?? false);
+        // ✅ guarda autor
+        $data['created_by'] = auth()->id();
 
         $recorrido = Recorrido::create($data);
 
@@ -34,6 +35,7 @@ class RecorridoController extends Controller
             ->route('recorridos.edit', $recorrido)
             ->with('status', 'Recorrido creado correctamente.');
     }
+
 
     public function show(Recorrido $recorrido)
     {
@@ -49,11 +51,6 @@ class RecorridoController extends Controller
     public function update(UpdateRecorridoRequest $request, Recorrido $recorrido)
     {
         $data = $request->validated();
-
-        if (empty($data['slug'])) {
-            $data['slug'] = Str::slug($data['titulo']);
-        }
-
         $data['publicado'] = (bool) ($data['publicado'] ?? false);
 
         $recorrido->update($data);
@@ -62,7 +59,6 @@ class RecorridoController extends Controller
             ->route('recorridos.edit', $recorrido)
             ->with('status', 'Recorrido actualizado.');
     }
-
     public function destroy(Recorrido $recorrido)
     {
         $recorrido->delete();

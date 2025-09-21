@@ -10,7 +10,6 @@ class StoreRecorridoRequest extends FormRequest
     public function rules(): array {
         return [
             'titulo' => ['required','string','max:255'],
-            'slug'   => ['nullable','string','max:255','unique:recorridos,slug'],
             'descripcion' => ['nullable','string'],
             'publicado'   => ['nullable','boolean'],
         ];
