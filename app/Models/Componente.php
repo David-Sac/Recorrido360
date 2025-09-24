@@ -23,10 +23,19 @@ class Componente extends Model
         return $this->hasMany(Panorama::class);
     }
 
+    // reemplaza la relación hotspots()
     public function hotspots()
     {
-        return $this->hasMany(Hotspot::class);
-    }
+        return $this->hasManyThrough(
+            \App\Models\Hotspot::class,   // modelo final
+            \App\Models\Panorama::class,  // modelo intermedio
+            'componente_id',              // FK en panoramas -> componentes.id
+            'panorama_id',                // FK en hotspots   -> panoramas.id
+            'id',                         // PK en componentes
+            'id'                          // PK en panoramas
+        );
+}
+
 
     public function creator()
     {

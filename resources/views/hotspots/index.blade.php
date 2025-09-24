@@ -30,29 +30,18 @@
     <h2 class="text-xl font-semibold">Hotspots de “{{ $panorama->nombre }}”</h2>
   </x-slot>
 
-  @php
-    // Serializamos los hotspots y elementos a JSON
-    $hotspotsJson = $hotspots->map(fn($h) => [
-      'id'              => $h->id,
-      'posicion'        => $h->posicion,      // "x y z"
-      'elemento_id'     => $h->elemento->id,
-      'elemento_nombre' => $h->elemento->nombre,
-    ])->values()->toJson();
+<main
+  x-data='hotspotManager({
+    hotspots: @json($hotspots),
+    elementos: @json($elementos),
+    postUrl: @json(route("panoramas.hotspots.store", $panorama)),
+    // OJO: como usas shallow(), el DELETE es /hotspots/{id}
+    deleteUrlBase: @json(url("/hotspots"))
+  })'
+  x-init="init()"
+  class="max-w-4xl px-4 py-6 mx-auto space-y-6"
+>
 
-    $elementosJson = \App\Models\Elemento::where('componente_id', $panorama->componente_id)
-      ->get()
-      ->map(fn($e) => ['id'=>$e->id,'nombre'=>$e->nombre])
-      ->toJson();
-  @endphp
-
-  <main
-    id="hotspot-root"
-    data-hotspots='{{ $hotspotsJson }}'
-    data-elementos='{{ $elementosJson }}'
-    x-data="hotspotManager()"
-    x-init="init()"
-    class="max-w-4xl px-4 py-6 mx-auto space-y-6"
-  >
 
     <div class="text-sm text-gray-600">
       Coordenadas 3D: <span x-text="hover || '—, —, —'"></span>
@@ -98,7 +87,7 @@
             class="clickable"
             :position="h.posArr.join(' ')"
             radius="5"
-            color="#454545"+
+            :color="h.color ? h.color : '#454545'"
             transparent="true"
             opacity="0.8"
             look-at="#camera"
@@ -108,12 +97,13 @@
           </a-circle>
         </template>
 
+
         <!-- Esfera verde dinámica al añadir -->
         <template x-if="adding && newPosArr">
           <a-circle
             :position="newPosArr.join(' ')"
             radius="5"
-            color="#454545"+
+            color="#454545"
             transparent="true"
             opacity="0.8"
             look-at="#camera"
@@ -175,118 +165,98 @@
 
   <x-slot name="scripts">
     <script>
-      function hotspotManager() {
-        return {
-          hotspots: JSON.parse(document.getElementById('hotspot-root').dataset.hotspots)
-            .map(h => {
-              const [x,y,z] = h.posicion.split(' ').map(Number);
-              return { ...h, posArr: [ x, y, z ] };
-            }),
-          elementos: JSON.parse(document.getElementById('hotspot-root').dataset.elementos),
+    function hotspotManager(props) {
+      return {
+        // ✅ usa las p rops correctas
+        hotspots: (props.hotspots || []).map(h => ({
+          ...h,
+          // por si llega sin posArr, lo derivamos de 'posicion'
+          posArr: Array.isArray(h.posArr) && h.posArr.length === 3
+            ? h.posArr.map(Number)
+            : String(h.posicion || '0 0 0').split(' ').map(Number)
+        })),
+        elementos: props.elementos || [],
+        postUrl: props.postUrl,
+        deleteUrlBase: props.deleteUrlBase,
 
-          adding: false,
-          newPos: null,
-          newPosArr: null,
-          selectedElemento: null,
-          hover: null,
+        adding: false,
+        newPos: null,
+        newPosArr: null,
+        selectedElemento: null,
+        hover: null,
 
-          init() {
-            console.log('[hotspot] init() fired');
-            const sceneEl = this.$refs.scene;
-            sceneEl.addEventListener('loaded', () => {
-              sceneEl.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
-            });
-            sceneEl.addEventListener('click', this.onClick.bind(this));
-          },
+        init() {
+          const sceneEl = this.$refs.scene;
+          sceneEl.addEventListener('loaded', () => {
+            sceneEl.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
+          });
+          sceneEl.addEventListener('click', this.onClick.bind(this));
+        },
 
-          startAdd() {
-            console.log('[hotspot] startAdd() called');
-            this.adding = true;
-            this.newPos = this.newPosArr = this.selectedElemento = null;
-          },
+        startAdd() {
+          this.adding = true;
+          this.newPos = this.newPosArr = this.selectedElemento = null;
+        },
 
-          onClick(evt) {
-            if (!this.adding) return;
-            console.log('[hotspot] click event, adding=', this.adding);
-            
-            // Convertir posición de ratón a coordenadas
-            const rect = this.$refs.scene.canvas.getBoundingClientRect();
-            const x_ndc = ((evt.clientX - rect.left) / rect.width) * 2 - 1;
-            const y_ndc = -((evt.clientY - rect.top) / rect.height) * 2 + 1;
-            const mouse = new AFRAME.THREE.Vector2(x_ndc, y_ndc);
+        onClick(evt) {
+          if (!this.adding) return;
 
-            // Crea rayo para llegar al sky
-            const camera = this.$refs.scene.camera.el.getObject3D('camera');
-            const raycaster = new AFRAME.THREE.Raycaster();
-            raycaster.setFromCamera(mouse, camera);
+          const rect = this.$refs.scene.canvas.getBoundingClientRect();
+          const x_ndc = ((evt.clientX - rect.left) / rect.width) * 2 - 1;
+          const y_ndc = -((evt.clientY - rect.top) / rect.height) * 2 + 1;
+          const mouse = new AFRAME.THREE.Vector2(x_ndc, y_ndc);
 
-            // intersecta con el domo 360
-            const skyObj = this.$refs.scene.querySelector('#sky').object3D;
-            const intersects = raycaster.intersectObject(skyObj, true);
-            console.log('[hotspot] intersects:', intersects);
-            
-            // Si intersecta toma el punto 3D
-            if (intersects.length > 0) {
-              const p = intersects[0].point;
-              console.log('[hotspot] point:', p);
+          const camera = this.$refs.scene.camera.el.getObject3D('camera');
+          const raycaster = new AFRAME.THREE.Raycaster();
+          raycaster.setFromCamera(mouse, camera);
 
-              // OFFSET: colocamos la esfera ligeramente hacia dentro del domo
-              const eps = 0.98;
-              this.newPosArr = [
-                (p.x * eps).toFixed(2),
-                (p.y * eps).toFixed(2),
-                (p.z * eps).toFixed(2)
-              ].map(Number);
-              this.newPos = this.newPosArr.join(' ');
-            }
-          },
+          const skyObj = this.$refs.scene.querySelector('#sky').object3D;
+          const hit = raycaster.intersectObject(skyObj, true)[0];
 
-          onMouseMove(evt) {
-            const rect = this.$refs.scene.canvas.getBoundingClientRect();
-            const x_ndc = ((evt.clientX - rect.left) / rect.width) * 2 - 1;
-            const y_ndc = -((evt.clientY - rect.top) / rect.height) * 2 + 1;
-            const mouse = new AFRAME.THREE.Vector2(x_ndc, y_ndc);
-            const camera = this.$refs.scene.camera.el.getObject3D('camera');
-            const ray = new AFRAME.THREE.Raycaster(); ray.setFromCamera(mouse, camera);
-            const skyObj = this.$refs.scene.querySelector('#sky').object3D;
-            const inters = ray.intersectObject(skyObj, true);
-            this.hover = inters.length
-              ? `${inters[0].point.x.toFixed(2)}, ${inters[0].point.y.toFixed(2)}, ${inters[0].point.z.toFixed(2)}`
-              : null;
-          },
-
-          cancelAdd() {
-            this.adding = false;
-            this.newPos = this.newPosArr = this.selectedElemento = null;
-          },
-
-          confirmAdd() {
-            if (!this.newPos || !this.selectedElemento) return;
-            fetch(`{{ url("panoramas/{$panorama->id}/hotspots") }}`, {
-              method: 'POST',
-              headers: {
-                'Content-Type':'application/json',
-                'X-CSRF-TOKEN':'{{ csrf_token() }}'
-              },
-              body: JSON.stringify({
-                elemento_id: this.selectedElemento,
-                posicion: this.newPos
-              })
-            })
-            .then(res => res.ok ? location.reload() : Promise.reject());
-          },
-
-          deleteHotspot(id) {
-            if (!confirm('¿Eliminar hotspot?')) return;
-            fetch(`/hotspots/${id}`, {
-              method:'DELETE',
-              headers:{ 'X-CSRF-TOKEN':'{{ csrf_token() }}' }
-            })
-            .then(res => res.ok ? location.reload() : Promise.reject());
+          if (hit) {
+            const p = hit.point, eps = 0.98;
+            this.newPosArr = [(p.x*eps),(p.y*eps),(p.z*eps)].map(v=>+v.toFixed(2));
+            this.newPos = this.newPosArr.join(' ');
           }
+        },
+
+        onMouseMove(evt) {
+          const rect = this.$refs.scene.canvas.getBoundingClientRect();
+          const x_ndc = ((evt.clientX - rect.left) / rect.width) * 2 - 1;
+          const y_ndc = -((evt.clientY - rect.top) / rect.height) * 2 + 1;
+          const mouse = new AFRAME.THREE.Vector2(x_ndc, y_ndc);
+          const camera = this.$refs.scene.camera.el.getObject3D('camera');
+          const ray = new AFRAME.THREE.Raycaster(); ray.setFromCamera(mouse, camera);
+          const skyObj = this.$refs.scene.querySelector('#sky').object3D;
+          const hit = ray.intersectObject(skyObj, true)[0];
+          this.hover = hit ? `${hit.point.x.toFixed(2)}, ${hit.point.y.toFixed(2)}, ${hit.point.z.toFixed(2)}` : null;
+        },
+
+        cancelAdd() {
+          this.adding = false;
+          this.newPos = this.newPosArr = this.selectedElemento = null;
+        },
+
+        confirmAdd() {
+          if (!this.newPos || !this.selectedElemento) return;
+          fetch(this.postUrl, {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json', 'X-CSRF-TOKEN':'{{ csrf_token() }}' },
+            body: JSON.stringify({ elemento_id: this.selectedElemento, posicion: this.newPos })
+          }).then(res => res.ok ? location.reload() : Promise.reject());
+        },
+
+        deleteHotspot(id) {
+          if (!confirm('¿Eliminar hotspot?')) return;
+          fetch(`${this.deleteUrlBase}/${id}`, {
+            method:'DELETE',
+            headers:{ 'X-CSRF-TOKEN':'{{ csrf_token() }}' }
+          }).then(res => res.ok ? location.reload() : Promise.reject());
         }
       }
+    }
     </script>
-  </x-slot>
+</x-slot>
+
 
 </x-app-layout>

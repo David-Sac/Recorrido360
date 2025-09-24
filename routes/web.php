@@ -45,25 +45,18 @@ require __DIR__.'/auth.php';
 Route::middleware(['auth', 'role:Admin|Super Admin'])->group(function () {
     Route::resource('componentes', ComponenteController::class)->except(['show']);
     Route::resource('elementos',  ElementoController::class)->except(['show']);
-    Route::resource('recorridos', RecorridoController::class)->except(['show']);});
+    Route::resource('recorridos', RecorridoController::class)->except(['show']);
+});
 
 // ----------------------
 // ÁREA ADMIN | SUPER ADMIN | ASISTENTE
 // ----------------------
 Route::middleware(['auth', 'role:Admin|Super Admin|Asistente'])->group(function () {
-    // CRUD panoramas
-    Route::resource('panoramas', PanoramaController::class);
+    // Si NO tienes implementado show en el controlador:
+    Route::resource('panoramas', PanoramaController::class)->except(['show']);
 
-    // Hotspots anidados en panoramas
+    // Hotspots anidados con shallow (index, store anidados; destroy plano)
     Route::resource('panoramas.hotspots', HotspotController::class)
         ->shallow()
         ->only(['index', 'store', 'destroy']);
-
-    // Ruta explícita para crear hotspot en panorama
-    Route::post('panoramas/{panorama}/hotspots', [HotspotController::class, 'store']);
 });
-
-// ----------------------
-// Rutas públicas opcionales
-// ----------------------
-Route::get('/hotspots/{hotspot}', [HotspotController::class, 'show']);
