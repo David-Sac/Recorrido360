@@ -1,16 +1,25 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Recorrido;
-use Illuminate\Support\Str;
-use App\Http\Requests\StoreRecorridoRequest;
-use App\Http\Requests\UpdateRecorridoRequest;
+use App\Models\Panorama;
+use Illuminate\Http\Request;
 
 class RecorridoController extends Controller
 {
-    public function index()
+    // LISTA con búsqueda y contador
+    public function index(Request $request)
     {
-        $recorridos = Recorrido::orderByDesc('created_at')->paginate(12);
+        $recorridos = Recorrido::query()
+            ->withCount('panoramas')
+            ->when($request->filled('search'), fn($q) =>
+                $q->where('titulo', 'like', '%'.$request->search.'%')
+            )
+            ->orderByDesc('updated_at')
+            ->paginate(12)
+            ->withQueryString();
+
         return view('recorridos.index', compact('recorridos'));
     }
 
@@ -19,14 +28,15 @@ class RecorridoController extends Controller
         return view('recorridos.create');
     }
 
-    public function store(StoreRecorridoRequest $request)
+    public function store(Request $request)
     {
-        $data = $request->validated();
+        $data = $request->validate([
+            'titulo'      => ['required','string','max:255'],
+            'descripcion' => ['nullable','string'],
+            'publicado'   => ['sometimes','boolean'],
+        ]);
 
-        // Normaliza checkbox
         $data['publicado']  = (bool) ($data['publicado'] ?? false);
-
-        // ✅ guarda autor
         $data['created_by'] = auth()->id();
 
         $recorrido = Recorrido::create($data);
@@ -36,21 +46,35 @@ class RecorridoController extends Controller
             ->with('status', 'Recorrido creado correctamente.');
     }
 
-
-    public function show(Recorrido $recorrido)
+    public function edit(Recorrido $recorrido, Request $request)
     {
-        // Si quieres mostrar su secuencia, puedes eager-load: panoramas()
-        return view('recorridos.show', compact('recorrido'));
+        // Carga panoramas ya anexados, ordenados por el pivot 'orden'
+        $recorrido->load(['panoramas' => function($q){
+            $q->withPivot('orden')->orderBy('recorrido_panorama.orden');
+        }]);
+
+        // Panoramas disponibles (excluye los usados)
+        $usados = $recorrido->panoramas->pluck('id')->all();
+
+        $disponibles = Panorama::query()
+            ->when($request->filled('q'), fn($q) =>
+                $q->where('nombre','like','%'.$request->q.'%')   // usa 'nombre'
+            )
+            ->whereNotIn('id', $usados)
+            ->latest('id')
+            ->take(40)
+            ->get(['id','nombre','imagen_path']);               // usa 'nombre'
+
+        return view('recorridos.edit', compact('recorrido','disponibles'));
     }
 
-    public function edit(Recorrido $recorrido)
+    public function update(Request $request, Recorrido $recorrido)
     {
-        return view('recorridos.edit', compact('recorrido'));
-    }
-
-    public function update(UpdateRecorridoRequest $request, Recorrido $recorrido)
-    {
-        $data = $request->validated();
+        $data = $request->validate([
+            'titulo'      => ['required','string','max:255'],
+            'descripcion' => ['nullable','string'],
+            'publicado'   => ['sometimes','boolean'],
+        ]);
         $data['publicado'] = (bool) ($data['publicado'] ?? false);
 
         $recorrido->update($data);
@@ -59,11 +83,50 @@ class RecorridoController extends Controller
             ->route('recorridos.edit', $recorrido)
             ->with('status', 'Recorrido actualizado.');
     }
+
     public function destroy(Recorrido $recorrido)
     {
         $recorrido->delete();
         return redirect()
             ->route('recorridos.index')
             ->with('status', 'Recorrido eliminado.');
+    }
+
+    // -------------------------
+    // ACCIONES EXTRA DE INTERFAZ
+    // -------------------------
+
+    // ➕ Adjuntar un panorama (al final del orden)
+    public function attachPanorama(Recorrido $recorrido, Panorama $panorama)
+    {
+        $max = $recorrido->panoramas()->max('recorrido_panorama.orden') ?? 0;
+        $recorrido->panoramas()->syncWithoutDetaching([
+            $panorama->id => ['orden' => $max + 1]
+        ]);
+
+        return back()->with('status','Panorama añadido');
+    }
+
+    // ➖ Quitar panorama
+    public function detachPanorama(Recorrido $recorrido, Panorama $panorama)
+    {
+        $recorrido->panoramas()->detach($panorama->id);
+        return back()->with('status','Panorama quitado');
+    }
+
+    // ↕️ Guardar reordenamiento (drag & drop)
+    public function reorder(Request $request, Recorrido $recorrido)
+    {
+        $data = $request->validate([
+            'orden' => ['required','array'], // ej: ["12","9","15"]
+        ]);
+
+        foreach (array_values($data['orden']) as $pos => $panoramaId) {
+            $recorrido->panoramas()->updateExistingPivot($panoramaId, [
+                'orden' => $pos + 1
+            ]);
+        }
+
+        return response()->json(['success' => true]);
     }
 }

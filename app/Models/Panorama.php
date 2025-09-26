@@ -32,6 +32,7 @@ class Panorama extends Model
     {
         return $this->belongsToMany(Recorrido::class)
             ->withPivot('orden')
+            ->withTimestamps()
             ->orderBy('recorrido_panorama.orden'); ;
     }
 }

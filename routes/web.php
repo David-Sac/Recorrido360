@@ -46,6 +46,21 @@ Route::middleware(['auth', 'role:Admin|Super Admin'])->group(function () {
     Route::resource('componentes', ComponenteController::class)->except(['show']);
     Route::resource('elementos',  ElementoController::class)->except(['show']);
     Route::resource('recorridos', RecorridoController::class)->except(['show']);
+        // ➕ Añadir un panorama al recorrido (lo pone al final)
+    Route::post('recorridos/{recorrido}/panoramas/{panorama}', [RecorridoController::class, 'attachPanorama'])
+        ->name('recorridos.attach');
+
+    // ➖ Quitar un panorama del recorrido
+    Route::delete('recorridos/{recorrido}/panoramas/{panorama}', [RecorridoController::class, 'detachPanorama'])
+        ->name('recorridos.detach');
+
+    // ↕️ Guardar nuevo orden (drag & drop)
+    Route::post('recorridos/{recorrido}/reordenar', [RecorridoController::class, 'reorder'])
+        ->name('recorridos.reorder');
+
+    // 🔁 Publicar / Despublicar
+    Route::post('recorridos/{recorrido}/toggle-publicado', [RecorridoController::class, 'togglePublicado'])
+        ->name('recorridos.toggle-publicado');
 });
 
 // ----------------------
