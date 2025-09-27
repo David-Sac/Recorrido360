@@ -9,12 +9,32 @@ class Elemento extends Model
     protected $fillable = [
         'componente_id',
         'nombre',
-        'tipo',
+        'tipo',         // datos | imagen | video | audio | otro
         'contenido',
+        'titulo',
+        'descripcion',
+        'url',
+        'media_path',
+        'meta',
     ];
+
+    protected $casts = [
+        'meta' => 'array',
+    ];
+
+    public function getSourceUrlAttribute(): ?string
+    {
+        if (!empty($this->url)) {
+            return $this->url;
+        }
+        if (!empty($this->media_path)) {
+            return asset('storage/'.$this->media_path);
+        }
+        return null;
+    }
 
     public function componente()
     {
-        return $this->belongsTo(Componente::class);
+        return $this->belongsTo(\App\Models\Componente::class);
     }
 }

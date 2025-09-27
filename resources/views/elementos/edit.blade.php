@@ -1,30 +1,46 @@
-{{-- resources/views/elementos/edit.blade.php --}}
 <x-app-layout>
-  <x-slot name="header">
-    <h2 class="font-semibold text-xl">Editar Elemento</h2>
+  {{-- Alpine para campos dinámicos --}}
+  <x-slot name="head">
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   </x-slot>
 
-  <main class="py-6 max-w-3xl mx-auto px-4">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold">Editar: {{ $elemento->nombre }}</h1>
-      <a href="{{ route('elementos.index') }}"
-         class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
-        ← Volver
-      </a>
+  <x-slot name="header">
+    <h2 class="text-xl font-semibold leading-tight text-slate-800">Editar elemento</h2>
+  </x-slot>
+
+  <div class="py-6">
+    <div class="max-w-3xl px-4 mx-auto">
+
+      @if (session('success'))
+        <div class="px-4 py-3 mb-4 rounded-lg bg-emerald-50 text-emerald-700">
+          {{ session('success') }}
+        </div>
+      @endif
+      @if (session('warning'))
+        <div class="px-4 py-3 mb-4 rounded-lg bg-amber-50 text-amber-700">
+          {{ session('warning') }}
+        </div>
+      @endif
+      @if ($errors->any())
+        <div class="px-4 py-3 mb-4 rounded-lg bg-rose-50 text-rose-700">
+          <ul class="pl-5 space-y-1 list-disc">
+            @foreach ($errors->all() as $error)
+              <li>{{ $error }}</li>
+            @endforeach
+          </ul>
+        </div>
+      @endif
+
+      <form method="POST" action="{{ route('elementos.update', $elemento) }}" enctype="multipart/form-data" class="card">
+        @csrf @method('PUT')
+        <div class="space-y-4 card-body">
+          @include('elementos._form', ['componentes' => $componentes, 'elemento' => $elemento])
+          <div class="flex justify-between">
+            <a href="{{ route('elementos.index') }}" class="btn btn-secondary">Volver</a>
+            <button class="btn btn-primary" type="submit">Actualizar</button>
+          </div>
+        </div>
+      </form>
     </div>
-
-    <x-alert type="success"/>
-    <x-alert type="warning"/>
-    <x-alert type="error"/>
-
-    <form action="{{ route('elementos.update', $elemento) }}"
-          method="POST"
-          class="bg-white p-6 rounded-lg shadow space-y-6">
-      @csrf @method('PUT')
-      @include('elementos._form')
-      <div class="flex justify-end">
-        <x-primary-button>Actualizar</x-primary-button>
-      </div>
-    </form>
-  </main>
+  </div>
 </x-app-layout>

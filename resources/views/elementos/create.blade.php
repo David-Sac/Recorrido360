@@ -1,30 +1,35 @@
-{{-- resources/views/elementos/create.blade.php --}}
 <x-app-layout>
-  <x-slot name="header">
-    <h2 class="font-semibold text-xl">Crear Elemento</h2>
+  {{-- Alpine para campos dinámicos --}}
+  <x-slot name="head">
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   </x-slot>
 
-  <main class="py-6 max-w-3xl mx-auto px-4">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold">Nuevo Elemento</h1>
-      <a href="{{ route('elementos.index') }}"
-         class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
-        ← Volver
-      </a>
+  <x-slot name="header">
+    <h2 class="text-xl font-semibold leading-tight text-slate-800">Crear elemento</h2>
+  </x-slot>
+
+  <div class="py-6">
+    <div class="max-w-3xl px-4 mx-auto">
+      @if ($errors->any())
+        <div class="px-4 py-3 mb-4 rounded-lg bg-rose-50 text-rose-700">
+          <ul class="pl-5 space-y-1 list-disc">
+            @foreach ($errors->all() as $error)
+              <li>{{ $error }}</li>
+            @endforeach
+          </ul>
+        </div>
+      @endif
+
+      <form method="POST" action="{{ route('elementos.store') }}" enctype="multipart/form-data" class="card">
+        @csrf
+        <div class="space-y-4 card-body">
+          @include('elementos._form', ['componentes' => $componentes])
+          <div class="flex justify-between">
+            <a href="{{ route('elementos.index') }}" class="btn btn-secondary">Volver</a>
+            <button class="btn btn-primary" type="submit">Guardar</button>
+          </div>
+        </div>
+      </form>
     </div>
-
-    <x-alert type="success"/>
-    <x-alert type="warning"/>
-    <x-alert type="error"/>
-
-    <form action="{{ route('elementos.store') }}"
-          method="POST"
-          class="bg-white p-6 rounded-lg shadow space-y-6">
-      @csrf
-      @include('elementos._form')
-      <div class="flex justify-end">
-        <x-primary-button>Guardar</x-primary-button>
-      </div>
-    </form>
-  </main>
+  </div>
 </x-app-layout>
