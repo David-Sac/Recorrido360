@@ -1,3 +1,4 @@
+{{-- resources/views/components/app-layout.blade.php --}}
 <!DOCTYPE html>
 <html lang="{{ str_replace('_','-',app()->getLocale()) }}">
 <head>
@@ -18,7 +19,7 @@
   {{ $head ?? '' }}
 </head>
 <body class="font-sans antialiased">
-  <div class="flex flex-col min-h-screen bg-white w-full">
+  <div class="flex flex-col w-full min-h-screen bg-white">
 
     <x-navbar />
 
@@ -26,7 +27,8 @@
       {{ $slot }}
     </main>
 
-    <x-footer />
+    {{-- Footer removido --}}
+    {{-- <x-footer /> --}}
   </div>
 
   {{-- slot para inyectar JS al final del body --}}

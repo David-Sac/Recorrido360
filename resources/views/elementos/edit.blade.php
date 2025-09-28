@@ -1,5 +1,4 @@
-<x-app-layout>
-  {{-- Alpine para campos dinámicos --}}
+<x-app-layout >
   <x-slot name="head">
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   </x-slot>
@@ -10,17 +9,12 @@
 
   <div class="py-6">
     <div class="max-w-3xl px-4 mx-auto">
+      @foreach (['success'=>'emerald','warning'=>'amber'] as $k=>$c)
+        @if (session($k))
+          <div class="px-4 py-3 mb-4 rounded-lg bg-{{ $c }}-50 text-{{ $c }}-700">{{ session($k) }}</div>
+        @endif
+      @endforeach
 
-      @if (session('success'))
-        <div class="px-4 py-3 mb-4 rounded-lg bg-emerald-50 text-emerald-700">
-          {{ session('success') }}
-        </div>
-      @endif
-      @if (session('warning'))
-        <div class="px-4 py-3 mb-4 rounded-lg bg-amber-50 text-amber-700">
-          {{ session('warning') }}
-        </div>
-      @endif
       @if ($errors->any())
         <div class="px-4 py-3 mb-4 rounded-lg bg-rose-50 text-rose-700">
           <ul class="pl-5 space-y-1 list-disc">

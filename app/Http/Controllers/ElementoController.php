@@ -5,13 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\Elemento;
 use App\Models\Componente;
 use App\Http\Requests\ElementoRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ElementoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $elementos = Elemento::with('componente')->latest()->paginate(10);
+        $q = trim((string)$request->get('q',''));
+        $elementos = Elemento::with('componente')
+            ->when($q !== '', fn($qq) => $qq->where('nombre','like',"%{$q}%"))
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
         return view('elementos.index', compact('elementos'));
     }
 
@@ -24,16 +31,24 @@ class ElementoController extends Controller
     public function store(ElementoRequest $request)
     {
         $data = $request->validated();
-        $data['meta'] = $data['meta'] ?? null;
+        $tipo = $data['tipo'];
 
-        if (in_array($data['tipo'], ['imagen','video','audio'])) {
-            if (empty($data['url']) && !$request->hasFile('media')) {
-                return back()->withErrors(['url' => 'Provee una URL o sube un archivo.'])->withInput();
+        if ($tipo === 'datos') {
+            if (empty($data['contenido'])) {
+                return back()->withErrors(['contenido' => 'El contenido es obligatorio en tipo "datos".'])->withInput();
             }
-        }
+            $data['media_path'] = null;
+        } else {
+            // MEDIA: archivo obligatorio
+            if (!$request->hasFile('media')) {
+                return back()->withErrors(['media' => 'Debes seleccionar un archivo.'])->withInput();
+            }
 
-        if ($request->hasFile('media')) {
+            // Validar mimetypes por tipo
+            $this->validateMimeForType($request, $tipo);
+
             $data['media_path'] = $request->file('media')->store('elementos', 'public');
+            $data['contenido']  = null; // no aplica en media
         }
 
         Elemento::create($data);
@@ -50,20 +65,36 @@ class ElementoController extends Controller
     public function update(ElementoRequest $request, Elemento $elemento)
     {
         $data = $request->validated();
-        $data['meta'] = $data['meta'] ?? null;
+        $tipo = $data['tipo'];
 
-        if (in_array($data['tipo'], ['imagen','video','audio'])) {
-            if (empty($data['url']) && !$request->hasFile('media') && empty($elemento->media_path)) {
-                return back()->withErrors(['url' => 'Provee una URL o sube un archivo.'])->withInput();
+        if ($tipo === 'datos') {
+            if (empty($data['contenido'])) {
+                return back()->withErrors(['contenido' => 'El contenido es obligatorio en tipo "datos".'])->withInput();
             }
-        }
-
-        if ($request->hasFile('media')) {
-            $path = $request->file('media')->store('elementos', 'public');
+            // si tenía archivo previo y ahora pasa a datos, lo borramos
             if (!empty($elemento->media_path) && Storage::disk('public')->exists($elemento->media_path)) {
                 Storage::disk('public')->delete($elemento->media_path);
             }
-            $data['media_path'] = $path;
+            $data['media_path'] = null;
+        } else {
+            // MEDIA: si no hay archivo nuevo y tampoco existe uno previo, error
+            if (!$request->hasFile('media') && empty($elemento->media_path)) {
+                return back()->withErrors(['media' => 'Debes seleccionar un archivo.'])->withInput();
+            }
+
+            // Si suben archivo nuevo, reemplaza anterior
+            if ($request->hasFile('media')) {
+                $this->validateMimeForType($request, $tipo);
+
+                $path = $request->file('media')->store('elementos', 'public');
+
+                if (!empty($elemento->media_path) && Storage::disk('public')->exists($elemento->media_path)) {
+                    Storage::disk('public')->delete($elemento->media_path);
+                }
+                $data['media_path'] = $path;
+            }
+
+            $data['contenido'] = null; // no aplica en media
         }
 
         $elemento->update($data);
@@ -79,5 +110,19 @@ class ElementoController extends Controller
         $elemento->delete();
 
         return redirect()->route('elementos.index')->with('error','Elemento eliminado');
+    }
+
+    // -----------------------
+    // Validación de mimetypes
+    // -----------------------
+    private function validateMimeForType(Request $request, string $tipo): void
+    {
+        $rules = match ($tipo) {
+            'imagen' => ['media' => 'file|mimes:jpg,jpeg,png,webp,avif|max:20480'], // 20MB
+            'video'  => ['media' => 'file|mimetypes:video/mp4,video/webm,video/ogg|max:102400'], // 100MB
+            'audio'  => ['media' => 'file|mimetypes:audio/mpeg,audio/mp3,audio/ogg,audio/wav|max:51200'], // 50MB
+            default  => ['media' => 'file|max:102400'], // "otro"
+        };
+        $request->validate($rules);
     }
 }

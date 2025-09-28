@@ -1,5 +1,4 @@
-<x-app-layout>
-  {{-- Alpine para campos dinámicos --}}
+<x-app-layout >
   <x-slot name="head">
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   </x-slot>
