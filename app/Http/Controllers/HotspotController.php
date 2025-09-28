@@ -6,44 +6,62 @@ use App\Models\Elemento;
 use App\Models\Hotspot;
 use App\Models\Panorama;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;   // 👈 AÑADIR
+use Illuminate\Support\Str;               // 👈 AÑADIR
 
 class HotspotController extends Controller
 {
     // Crear un hotspot en el panorama dado
     public function store(Request $request, Panorama $panorama)
     {
-        // 1) Validación de entrada
         $data = $request->validate([
             'posicion'    => 'required|string',
             'elemento_id' => 'required|exists:elementos,id',
         ]);
-
-        // 2) Asociar al panorama
         $data['panorama_id'] = $panorama->id;
 
-        // 3) Crear el registro
-        $hotspot = Hotspot::create($data);
+        $hotspot = Hotspot::create($data)->load('elemento');
 
-        // 4) Responder JSON con datos útiles para el frontend
+        // ✅ Construir media_url del elemento
+        $mediaUrl = null;
+        if ($hotspot->elemento) {
+            $c = trim((string) ($hotspot->elemento->contenido ?? ''));
+            if ($c !== '') {
+                if (Str::startsWith($c, ['http://','https://'])) {
+                    $mediaUrl = $c;
+                } else {
+                    // normaliza: quita backslashes y 'public/' si existe
+                    $c = str_replace('\\','/', $c);
+                    $c = ltrim(preg_replace('#^public/#', '', $c), '/');
+                    $mediaUrl = Storage::url($c); // => /storage/...
+                }
+            }
+        }
+
         return response()->json([
             'success'          => true,
             'id'               => $hotspot->id,
             'position'         => $hotspot->posicion,
             'elemento_id'      => $hotspot->elemento_id,
             'elemento_nombre'  => optional($hotspot->elemento)->nombre,
+            'elemento'         => $hotspot->elemento ? [
+                'id'          => $hotspot->elemento->id,
+                'nombre'      => $hotspot->elemento->nombre,
+                'tipo'        => strtolower($hotspot->elemento->tipo),
+                'contenido'   => $hotspot->elemento->contenido,
+                'descripcion' => $hotspot->elemento->descripcion,
+                'media_url'   => $mediaUrl,               // 👈 ENVÍA LA URL LISTA
+            ] : null,
         ]);
     }
 
-    // Eliminar un hotspot
     public function destroy(Hotspot $hotspot)
     {
         $hotspot->delete();
-
-        // Respuesta sencilla para confirmar al frontend
         return response()->json(['success' => true]);
     }
-    // Mostrar listado de hotspots de un panorama
-    // app/Http/Controllers/HotspotController.php
+
+    // Mostrar listado con media_url ya resuelta
     public function index(Panorama $panorama)
     {
         $panorama->load(['hotspots.elemento']);
@@ -57,28 +75,38 @@ class HotspotController extends Controller
             $posArr = collect(explode(' ', (string)$h->posicion))
                 ->map(fn($v) => (float)$v)->values()->all();
 
-            $color = $h->color;
-            if ($color) {
-                $c = strtoupper(ltrim(trim($color), '#'));
-                $color = preg_match('/^[0-9A-F]{6}$/', $c) ? "#{$c}" : null;
+            $e = $h->elemento;
+            $mediaUrl = null;
+            if ($e) {
+                $c = trim((string) ($e->contenido ?? ''));
+                if ($c !== '') {
+                    if (Str::startsWith($c, ['http://','https://'])) {
+                        $mediaUrl = $c;
+                    } else {
+                        $c = str_replace('\\','/', $c);
+                        $c = ltrim(preg_replace('#^public/#', '', $c), '/');
+                        $mediaUrl = Storage::url($c); // => /storage/...
+                    }
+                }
             }
 
             return [
                 'id'              => $h->id,
                 'posicion'        => $h->posicion,
                 'posArr'          => $posArr,
-                'color'           => $color, // o null
-                'elemento_id'     => $h->elemento?->id,
-                'elemento_nombre' => $h->elemento?->nombre,
+                'elemento_id'     => $e?->id,
+                'elemento_nombre' => $e?->nombre,
+                'elemento'        => $e ? [
+                    'id'          => $e->id,
+                    'nombre'      => $e->nombre,
+                    'tipo'        => strtolower($e->tipo),
+                    'contenido'   => $e->contenido,
+                    'descripcion' => $e->descripcion,
+                    'media_url'   => $mediaUrl,  // 👈 AQUÍ TAMBIÉN
+                ] : null,
             ];
         })->values();
 
-        return view('hotspots.index', [
-            'panorama'  => $panorama,
-            'elementos' => $elementos,
-            'hotspots'  => $hotspots,
-        ]);
+        return view('hotspots.index', compact('panorama','elementos','hotspots'));
     }
-
-
 }
