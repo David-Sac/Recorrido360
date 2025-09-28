@@ -1,6 +1,9 @@
 <x-guest-layout>
   {{-- Contenedor centrado en toda la pantalla --}}
-  <div class="flex items-center justify-center min-h-screen bg-gray-50">
+  <div
+      class="relative flex items-center justify-center min-h-screen bg-center bg-no-repeat bg-cover"
+      style="background-image: url('{{ asset('images/ecomuseo_entry.jpg') }}')"
+    >
     {{-- Tarjeta blanca con sombra --}}
     <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-lg">
 
