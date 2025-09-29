@@ -24,19 +24,16 @@
     </script>
   </x-slot>
 
-  <x-admin.toolbar
+  {{-- TOOLBOX unificada --}}
+  <x-ui.toolbox
     title="Editar recorrido"
     :back="route('recorridos.index')"
     backLabel="Volver a recorridos"
-    :breadcrumbs="[
-      ['label'=>'Dashboard','url'=>route('dashboard')],
-      ['label'=>'Recorridos','url'=>route('recorridos.index')],
-      ['label'=>'Editar']
-    ]"
   />
 
   <div class="py-6">
     <div class="max-w-3xl px-4 mx-auto">
+
       @if (session('status'))
         <div class="px-4 py-3 mb-4 rounded-lg bg-emerald-50 text-emerald-700">
           {{ session('status') }}
@@ -54,7 +51,8 @@
       @endif
 
       {{-- Form principal --}}
-      <form method="POST" action="{{ route('recorridos.update', $recorrido) }}" class="overflow-hidden bg-white border rounded-lg shadow-sm border-slate-200">
+      <form method="POST" action="{{ route('recorridos.update', $recorrido) }}"
+            class="overflow-hidden bg-white border rounded-lg shadow-sm border-slate-200">
         @csrf @method('PUT')
         <div class="p-5 space-y-5">
           @include('recorridos._form', ['recorrido' => $recorrido])
@@ -90,7 +88,8 @@
                 <form action="{{ route('recorridos.detach', [$recorrido, $p]) }}" method="POST"
                       onsubmit="return confirm('¿Quitar panorama del recorrido?')">
                   @csrf @method('DELETE')
-                  <button class="inline-flex items-center px-3 py-1.5 rounded-md bg-rose-600 text-white hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-400 btn-sm">
+                  <button
+                    class="inline-flex items-center px-3 py-1.5 rounded-md bg-rose-600 text-white hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-400">
                     Quitar
                   </button>
                 </form>
@@ -126,7 +125,7 @@
 
                 <form action="{{ route('recorridos.attach', [$recorrido, $p]) }}" method="POST">
                   @csrf
-                  <x-ui.btn-secondary type="submit" class="btn-sm">Añadir</x-ui.btn-secondary>
+                  <x-ui.btn-secondary type="submit">Añadir</x-ui.btn-secondary>
                 </form>
               </div>
             @empty

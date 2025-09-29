@@ -1,5 +1,5 @@
 {{-- resources/views/hotspots/index.blade.php --}}
-<x-app-layout>
+<x-app-layout :show-footer="false">
   <x-slot name="head">
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-look-at-component/dist/aframe-look-at-component.min.js"></script>
@@ -41,9 +41,7 @@
       .modal-card { width: min(900px, 92vw); max-height: 88vh; background:#0b0f19; color:#e5e7eb; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.5); overflow:hidden; display:flex; flex-direction:column; }
       .modal-header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:#111827; }
       .modal-body { padding:16px; overflow:auto; }
-      .btn { display:inline-flex; align-items:center; justify-content:center; padding:.5rem .75rem; border-radius:.5rem; }
-      .btn-red { background:#ef4444; color:#fff; } .btn-red:hover { background:#dc2626; }
-      .btn-ghost { background:#374151; color:#e5e7eb; } .btn-ghost:hover { background:#4b5563; }
+
       .toast { position:fixed; right:16px; bottom:16px; z-index:50; background:#111827; color:#e5e7eb; padding:10px 14px; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.35) }
     </style>
 
@@ -59,10 +57,7 @@
     </script>
   </x-slot>
 
-  <x-slot name="header">
-    <h2 class="text-xl font-semibold">Hotspots de “{{ $panorama->nombre }}”</h2>
-  </x-slot>
-
+  {{-- Alpine scope en <main> para que el TOOLBOX comparta estado (adding) --}}
   <main
     x-data='hotspotManager({
       hotspots: @json($hotspots),
@@ -72,8 +67,19 @@
       csrf: @json(csrf_token())
     })'
     x-init="init()"
-    class="w-full px-4 py-6 max-w-none"
+    class="w-full px-4 py-6 mx-auto max-w-7xl"
   >
+    {{-- TOOLBOX unificado --}}
+    <x-ui.toolbox
+      :title="'Hotspots'"
+      :subtitle="'Panorama: ' . $panorama->nombre"
+      :back="route('panoramas.index')"
+      backLabel="Volver a panoramas"
+    >
+      {{-- Toggle añadir hotspot desde la toolbar --}}
+      <x-ui.btn-primary @click="adding = !adding" x-text="adding ? 'Cancelar' : '+ Añadir hotspot'"></x-ui.btn-primary>
+    </x-ui.toolbox>
+
     {{-- GRID 30% / 70% --}}
     <div class="grid grid-cols-1 gap-4 md:grid-cols-10">
 
@@ -92,8 +98,11 @@
                   <div class="text-sm font-medium text-slate-800" x-text="h.elemento_nombre || h.elemento?.nombre || ('Hotspot #' + h.id)"></div>
                   <div class="text-xs coord" x-text="h.posicion"></div>
                 </div>
-                <button class="px-2 py-1 text-xs text-white rounded bg-rose-600 hover:bg-rose-700"
-                        x-on:click.stop="promptDelete(h)">Eliminar</button>
+
+                <form :action="`${deleteUrlBase}/${h.id}`" method="POST" x-on:submit.prevent="promptDelete(h)">
+                  @csrf @method('DELETE')
+                  <x-ui.btn-ghost type="submit" class="px-2 py-1 text-xs text-rose-600 border-rose-300 hover:bg-rose-50">Eliminar</x-ui.btn-ghost>
+                </form>
               </div>
             </template>
 
@@ -107,7 +116,9 @@
               <div class="text-xs text-slate-500">Coordenadas</div>
               <div class="coord"><span x-text="hover || '—, —, —'"></span></div>
             </div>
-            <button class="fab" title="Añadir hotspot" x-on:click="startAdd()">＋</button>
+
+            {{-- Botón flotante secundario para añadir --}}
+            <button type="button" class="fab" title="Añadir hotspot" x-on:click="startAdd()">＋</button>
           </div>
 
           {{-- Formulario de guardado cuando ya seleccionaste punto --}}
@@ -120,8 +131,8 @@
                    class="w-full mb-2">
 
             <div class="flex items-center gap-2 mb-2">
-              <button type="button" class="px-2 py-1 bg-gray-200 rounded" x-on:click="nudgeOffset(-0.05)">–</button>
-              <button type="button" class="px-2 py-1 bg-gray-200 rounded" x-on:click="nudgeOffset(0.05)">+</button>
+              <x-ui.btn-ghost type="button" class="px-2 py-1" x-on:click="nudgeOffset(-0.05)">–</x-ui.btn-ghost>
+              <x-ui.btn-ghost type="button" class="px-2 py-1" x-on:click="nudgeOffset(0.05)">+</x-ui.btn-ghost>
             </div>
 
             <label class="block mb-1 text-sm">Elemento</label>
@@ -133,10 +144,8 @@
             </select>
 
             <div class="flex items-center justify-between">
-              <button class="px-3 py-2 text-white bg-blue-600 rounded disabled:opacity-50"
-                      :disabled="!selectedElemento"
-                      x-on:click="confirmAdd()">Guardar</button>
-              <button class="px-3 py-2 rounded text-slate-700 bg-slate-200" x-on:click="cancelAdd()">Cancelar</button>
+              <x-ui.btn-primary type="button" :disabled="true" x-bind:disabled="!selectedElemento" x-on:click="confirmAdd()">Guardar</x-ui.btn-primary>
+              <x-ui.btn-secondary type="button" x-on:click="cancelAdd()">Cancelar</x-ui.btn-secondary>
             </div>
           </div>
         </div>
@@ -194,7 +203,7 @@
             </template>
           </a-scene>
 
-          <!-- HUD dentro del visor -->
+          <!-- HUD dentro del visor (panel de elemento) -->
           <template x-if="panel.visible">
             <div class="scene-overlay" x-transition x-on:click.self="closePanel()" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
               <section class="scene-modal" x-transition>
@@ -298,14 +307,14 @@
             </div>
           </div>
           <div class="flex items-center justify-end gap-2 p-4 bg-[#0b0f19]">
-            <button x-ref="cnfCancel" x-on:click="closeConfirm()" class="btn btn-ghost" :disabled="confirm.loading">Cancelar</button>
-            <button x-on:click="confirmDelete()" class="relative btn btn-red" :disabled="confirm.loading">
+            <x-ui.btn-secondary x-ref="cnfCancel" @click="closeConfirm()" :disabled="false" x-bind:disabled="confirm.loading">Cancelar</x-ui.btn-secondary>
+            <x-ui.btn-primary @click="confirmDelete()" class="relative" :disabled="false" x-bind:disabled="confirm.loading">
               <svg x-show="confirm.loading" class="absolute w-4 h-4 animate-spin left-3" viewBox="0 0 24 24" fill="none">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
               </svg>
-              <span class="pl-4" :class="{'pl-6': confirm.loading}">Eliminar</span>
-            </button>
+              <span class="pl-0" :class="{'pl-6': confirm.loading}">Eliminar</span>
+            </x-ui.btn-primary>
           </div>
         </div>
       </div>

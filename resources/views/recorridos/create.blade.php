@@ -1,17 +1,14 @@
 <x-app-layout :show-footer="false">
-  <x-admin.toolbar
+  {{-- TOOLBOX unificada --}}
+  <x-ui.toolbox
     title="Nuevo recorrido"
     :back="route('recorridos.index')"
     backLabel="Volver a recorridos"
-    :breadcrumbs="[
-      ['label'=>'Dashboard','url'=>route('dashboard')],
-      ['label'=>'Recorridos','url'=>route('recorridos.index')],
-      ['label'=>'Nuevo']
-    ]"
   />
 
   <div class="py-6">
     <div class="max-w-3xl px-4 mx-auto">
+
       @if ($errors->any())
         <div class="px-4 py-3 mb-4 rounded-lg bg-rose-50 text-rose-700">
           <ul class="pl-5 space-y-1 list-disc">
@@ -22,7 +19,8 @@
         </div>
       @endif
 
-      <form method="POST" action="{{ route('recorridos.store') }}" class="overflow-hidden bg-white border rounded-lg shadow-sm border-slate-200">
+      <form method="POST" action="{{ route('recorridos.store') }}"
+            class="overflow-hidden bg-white border rounded-lg shadow-sm border-slate-200">
         @csrf
         <div class="p-5 space-y-5">
           @include('recorridos._form', ['recorrido' => null])
@@ -33,6 +31,7 @@
           </div>
         </div>
       </form>
+
     </div>
   </div>
 </x-app-layout>

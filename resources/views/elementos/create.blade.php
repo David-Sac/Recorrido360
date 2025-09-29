@@ -1,11 +1,15 @@
-<x-app-layout >
+<x-app-layout :show-footer="false">
   <x-slot name="head">
+    {{-- Alpine (si no lo llevas en Vite) --}}
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   </x-slot>
 
-  <x-slot name="header">
-    <h2 class="text-xl font-semibold leading-tight text-slate-800">Crear elemento</h2>
-  </x-slot>
+  {{-- TOOLBOX --}}
+  <x-ui.toolbox
+    title="Nuevo elemento"
+    :back="route('elementos.index')"
+    backLabel="Volver al listado"
+  />
 
   <div class="py-6">
     <div class="max-w-3xl px-4 mx-auto">
@@ -19,14 +23,14 @@
         </div>
       @endif
 
-      <form method="POST" action="{{ route('elementos.store') }}" enctype="multipart/form-data" class="card">
+      <form method="POST" action="{{ route('elementos.store') }}" enctype="multipart/form-data"
+            class="p-6 space-y-6 bg-white border shadow-sm rounded-xl border-slate-200">
         @csrf
-        <div class="space-y-4 card-body">
-          @include('elementos._form', ['componentes' => $componentes])
-          <div class="flex justify-between">
-            <a href="{{ route('elementos.index') }}" class="btn btn-secondary">Volver</a>
-            <button class="btn btn-primary" type="submit">Guardar</button>
-          </div>
+        @include('elementos._form', ['componentes' => $componentes])
+
+        <div class="flex justify-end gap-2">
+          <x-ui.btn-ghost href="{{ route('elementos.index') }}">Cancelar</x-ui.btn-ghost>
+          <x-ui.btn-primary type="submit">Guardar</x-ui.btn-primary>
         </div>
       </form>
     </div>
